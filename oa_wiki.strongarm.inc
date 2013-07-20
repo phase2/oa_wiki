@@ -62,6 +62,40 @@ function oa_wiki_strongarm() {
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'dhtml_menu_settings';
+  $strongarm->value = array(
+    'nav' => 'bullet',
+    'animation' => array(
+      'effects' => array(
+        'height' => 'height',
+        'opacity' => 'opacity',
+        'width' => 0,
+      ),
+      'speed' => '100',
+    ),
+    'effects' => array(
+      'siblings' => 'none',
+      'children' => 'none',
+      'remember' => 'remember',
+    ),
+    'filter' => array(
+      'type' => 'whitelist',
+      'list' => array(
+        'og-menu-single' => 'og-menu-single',
+        'devel' => 0,
+        'main-menu' => 0,
+        'management' => 0,
+        'navigation' => 0,
+        'shortcut-set-1' => 0,
+        'user-menu' => 0,
+      ),
+    ),
+  );
+  $export['dhtml_menu_settings'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'field_bundle_settings_node__oa_wiki_page';
   $strongarm->value = array(
     'view_modes' => array(
