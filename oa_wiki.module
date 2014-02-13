@@ -46,6 +46,19 @@ function oa_wiki_strongarm_alter(&$items) {
 }
 
 /**
+ * Implements hook_modules_implements_alter().
+ */
+function oa_wiki_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'strongarm_alter') {
+    // Move oa_wiki's implementation to the first one any other modules can
+    // override our default easily if they don't want workbenech enabled.
+    $group = $implementations['oa_wiki'];
+    unset($implementations['oa_wiki']);
+    $implementations = array_merge(array('oa_wiki' => $group), $implementations);
+  }
+}
+
+/**
  * Implements hook_modules_installed().
  */
 function oa_wiki_modules_installed($modules) {
