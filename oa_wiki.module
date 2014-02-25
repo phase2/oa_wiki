@@ -72,3 +72,10 @@ function oa_wiki_modules_installed($modules) {
     variable_set($node_options_name, $node_options);
   }
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function oa_wiki_form_oa_wiki_page_node_form_alter(&$form, &$form_state) {
+  _oa_core_hide_comment_settings($form);
+}
