@@ -133,7 +133,7 @@ function oa_wiki_field_default_field_instances() {
     'comment_alter' => 0,
     'default_value' => NULL,
     'deleted' => 0,
-    'description' => 'Select a list of additional Spaces that this peice of content should be visible in. This <em>doesn\'t</em> affect access control - users in the other Spaces must have access to see this content in it\'s main Space for it to be visible to them at all.',
+    'description' => 'Select a list of additional Spaces that this piece of content should be visible in. This <em>doesn\'t</em> affect access control - users in the other Spaces must have access to see this content in it\'s main Space for it to be visible to them at all.',
     'display' => array(
       'default' => array(
         'label' => 'above',
@@ -374,7 +374,7 @@ function oa_wiki_field_default_field_instances() {
   t('Groups audience');
   t('OG vocabulary');
   t('OpenAtrium Section');
-  t('Select a list of additional Spaces that this peice of content should be visible in. This <em>doesn\'t</em> affect access control - users in the other Spaces must have access to see this content in it\'s main Space for it to be visible to them at all.');
+  t('Select a list of additional Spaces that this piece of content should be visible in. This <em>doesn\'t</em> affect access control - users in the other Spaces must have access to see this content in it\'s main Space for it to be visible to them at all.');
   t('Visible in other Spaces');
 
   return $field_instances;
