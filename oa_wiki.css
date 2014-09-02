@@ -14,6 +14,10 @@ li.dhtml-folder {
   list-style-image: none !important;
 }
 
+.menu li.dhtml-folder.expanded > ul.menu {
+  overflow: visible !important;
+}
+
 .menu li.dhtml-folder.expanded:before {
     background:url("images/plus_minus_icons.png") no-repeat 0px 0px;
     background-size: auto 100%;
