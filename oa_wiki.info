@@ -1,5 +1,5 @@
-name = Open Atrium Wiki
-description = Wiki pages for Open Atrium
+name = Open Atrium Documents
+description = Document pages for Open Atrium including optional attachments.  Can be used for wiki-like documents or as wrappers around external files.
 core = 7.x
 package = Open Atrium
 project = oa_wiki
