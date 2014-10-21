@@ -29,6 +29,6 @@ function oa_wiki_install_section_type() {
 /**
  * Update the News section term.
  */
-function oa_wiki_update_7001() {
+function oa_wiki_update_7002() {
   oa_wiki_install_section_type();
 }
