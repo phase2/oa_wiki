@@ -20,7 +20,7 @@ Drupal.behaviors.oa_wiki_media = {
 
     mediaSelected: function(selectedMedia) {
       var result = JSON.stringify(selectedMedia);
-        jQuery('#edit-result').val(result);
+      console.log(selectedMedia);
     }
   }
 

@@ -122,7 +122,7 @@ function oa_wiki_menu() {
   $items = array();
 
   $items['wiki-upload'] = array(
-    'access callback' => 'node',
+    'access callback' => 'node_access',
     'access arguments' => array('create', 'oa_wiki_page'),
     'page callback' => 'oa_wiki_upload_page',
     'page title' => 'Upload',
@@ -139,28 +139,12 @@ function oa_wiki_upload_page() {
   module_load_include('inc', 'media', 'includes/media.browser');
   media_attach_browser_js($form);
 
-  $form['element'] = array(
-    '#type' => 'media',
-    '#media_options' => array(
-      'global' => array(
-        'types' => array('video', 'audio'),
-      ),
-    ),
-  );
-
   $launcher = '<a href="#" id="launcher">' . t('Add Documents') . '</a>';
-
-  $form['options'] = array(
-    '#type' => 'textarea',
-    '#title' => 'Options (JSON)',
-    '#rows' => 10,
-  );
 
   $form['launcher'] = array(
     '#markup' => $launcher,
   );
 
-  drupal_add_js($js, array('type' => 'inline'));
   drupal_add_js(drupal_get_path('module', 'oa_wiki') . '/oa_wiki.browser.js');
   return $form;
 }
