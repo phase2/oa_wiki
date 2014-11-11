@@ -128,8 +128,7 @@ function oa_wiki_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  // @todo Access checks!
-  $items['wiki-upload/multi/%oa_wiki_upload_multi_load'] = array(
+  $items['wiki-upload/multi/%oa_wiki_upload_multi'] = array(
     'title' => 'Create & Update Documents',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('oa_wiki_upload_create_documents_form', 2),
@@ -159,7 +158,6 @@ function oa_wiki_upload_multi_load($fids) {
  */
 function oa_wiki_upload_page() {
   module_load_include('pages.inc', 'file_entity');
-  // Todo make this work with or without plupload
   if (module_exists('plupload') && module_exists('multiform')) {
     return drupal_get_form('file_entity_add_upload_multiple', array('wiki' => TRUE));
   }
@@ -299,6 +297,7 @@ function oa_wiki_create_document($file, $title) {
   global $user;
   // Set the Space (og_group_ref) to the current Space Context. 
   // Set the Section (oa_section_ref) to the current Section Context.
+  $context = og_context();
   $node = (object) array(
     // Create oa_wiki.
     'type' => 'oa_wiki_page',
@@ -318,6 +317,25 @@ function oa_wiki_create_document($file, $title) {
     // Set the Title of the Document node to the same title.
     'title' => $title,
   );
+  if ($context = og_context()) {
+    // @todo check access, e.g. can add to group/section.
+    $node->og_group_ref = array(
+      LANGUAGE_NONE => array(
+        0 => array(
+          'target_id' => $context['gid'],
+        ),
+      ),
+    );
+    if ($section_id = oa_section_get_section_context()) {
+      $node->oa_section_ref = array(
+        LANGUAGE_NONE => array(
+          0 => array(
+            'target_id' => $section_id,
+          ),
+        ),
+      );
+    }
+  }
   node_save($node);
   drupal_set_message(t('Document @title created.', array('@title' => $node->title)));
 }
