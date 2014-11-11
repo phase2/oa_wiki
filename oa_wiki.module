@@ -120,7 +120,6 @@ function oa_wiki_node_uri($node) {
  */
 function oa_wiki_menu() {
   $items = array();
-
   $items['wiki-upload'] = array(
     'access callback' => 'node_access',
     'access arguments' => array('create', 'oa_wiki_page'),
@@ -129,22 +128,265 @@ function oa_wiki_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  // @todo Access checks!
+  $items['wiki-upload/multi/%oa_wiki_upload_multi_load'] = array(
+    'title' => 'Create & Update Documents',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('oa_wiki_upload_create_documents_form', 2),
+    'access callback' => 'node_access',
+    'access arguments' => array('create', 'oa_wiki_page'),
+  );
   return $items;
+}
+
+/**
+ * Load callback for %media_multi placeholder in menu paths.
+ *
+ * @param string $fids
+ *   Separated by space (e.g., "3 6 12 99"). This often appears as "+" within
+ *   URLs (e.g., "3+6+12+99"), but Drupal automatically decodes paths when
+ *   intializing $_GET['q'].
+ *
+ * @return array
+ *   An array of corresponding file entities.
+ */
+function oa_wiki_upload_multi_load($fids) {
+  return file_load_multiple(explode(' ', $fids));
 }
 
 /**
  * Media upload.
  */
 function oa_wiki_upload_page() {
-  module_load_include('inc', 'media', 'includes/media.browser');
-  media_attach_browser_js($form);
+  module_load_include('pages.inc', 'file_entity');
+  // Todo make this work with or without plupload
+  if (module_exists('plupload') && module_exists('multiform')) {
+    return drupal_get_form('file_entity_add_upload_multiple', array('wiki' => TRUE));
+  }
+  else {
+    return drupal_get_form('file_entity_add_upload', array('wiki' => TRUE));
+  }
+}
 
-  $launcher = '<a href="#" id="launcher">' . t('Add Documents') . '</a>';
+/**
+ * Implements hook_form_FORM_ID_alter() for file_entity_add_upload_multiple.
+ */
+function oa_wiki_form_file_entity_add_upload_multiple_alter(&$form, &$form_state) {
+  if (!empty($form_state['build_info']['args'][0]['wiki'])) {
+    $form['#submit'][] = 'oa_wiki_file_entity_add_upload_multiple_submit';
+  }
+}
 
-  $form['launcher'] = array(
-    '#markup' => $launcher,
+/**
+ * Implements hook_form_FORM_ID_alter() for file_entity_add_upload_multiple.
+ */
+function oa_wiki_form_file_entity_add_upload_alter(&$form, &$form_state) {
+  if (!empty($form_state['build_info']['args'][0]['wiki'])) {
+    $form['#submit'][] = 'oa_wiki_file_entity_add_upload_submit';
+    array_unshift($form['#submit'], 'oa_wiki_file_entity_add_upload_submit_first');
+  }
+}
+
+/**
+ * Force skipping the fields step to confirm with multi upload..
+ */
+function oa_wiki_file_entity_add_upload_submit_first($form, &$form_state) {
+  global $conf;
+  $conf['file_entity_file_upload_wizard_skip_fields'] = TRUE;
+}
+
+/**
+ * Redirect to our form instead of edit files page.
+ */
+function oa_wiki_file_entity_add_upload_submit($form, &$form_state) {
+  if (empty($form_state['rebuild']) && !empty($form_state['file'])) {
+    $destination = array();
+    if (isset($_GET['destination'])) {
+      $destination = drupal_get_destination();
+      unset($_GET['destination']);
+    }
+    $form_state['redirect'] = array('wiki-upload/multi/' . $form_state['file']->fid);
+  }
+}
+
+/**
+ * Redirect to our form instead of edit files page.
+ */
+function oa_wiki_file_entity_add_upload_multiple_submit($form, &$form_state) {
+  $destination = array();
+  if (isset($_GET['destination'])) {
+    $destination = drupal_get_destination();
+    unset($_GET['destination']);
+  }
+  $form_state['redirect'] = array('wiki-upload/multi/' . implode(' ', array_keys($form_state['files'])), array('query' =>  $destination));
+}
+
+
+/**
+ * Form callback; Create multiple documents.
+ */
+function oa_wiki_upload_create_documents_form($form, &$form_state, $files) {
+  $form = array();
+  $form['documents']['#tree'] = TRUE;
+  $form['#files'] = $files;
+  foreach ($files as $fid => $file) {
+    // Just be sure they have access in case URL manipulation.
+    if (!file_entity_access('view', $file)) {
+      continue;
+    }
+    $form['documents'][$file->fid] = array(
+      '#type' => 'fieldset',
+      '#group' => 'files',
+      '#title' => check_plain($file->filename),
+    );
+    $form['documents'][$file->fid]['title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Title'),
+      '#default_value' => $file->filename,
+      '#weight' => $fid,
+    );
+    if ($node = oa_wiki_find_document($file)) {
+      $form['#files'][$file->fid]->node = $node;
+      $form['documents'][$file->fid]['update'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Update Document <a href="@url">@title</a> to file @filename?', array('@url' => url('node/' . $node->nid), '@title' => $node->title, '@filename' => $file->filename)),
+        '#default_value' => 1,
+        '#weight' => $fid - .5,
+      );
+      $form['documents'][$file->fid]['title']['#states'] = array(
+        'invisible' => array(
+          ':input[name="documents[' . $file->fid . '][update]"]' => array('checked' => TRUE),
+        ),
+      );
+      //oa_wiki_update_document($node, $node->oa_wiki_row, $file);
+    }
+  }
+  $form['create'] = array(
+    '#value' => t('Process'),
+    '#type' => 'submit',
   );
-
-  drupal_add_js(drupal_get_path('module', 'oa_wiki') . '/oa_wiki.browser.js');
   return $form;
+}
+
+
+/**
+ * Submit callback that creates or updates documents.
+ */
+function oa_wiki_upload_create_documents_form_submit($form, &$form_state) {
+  foreach ($form_state['values']['documents'] as $fid => $values) {
+    if (!empty($form['#files'][$fid])) {
+      $file = $form['#files'][$fid];
+      if (!empty($file->node->nid) && !empty($values['update'])) {
+        oa_wiki_update_document(node_load($file->node->nid), $file->node->oa_wiki_row, $file);
+      }
+      else {
+        oa_wiki_create_document($file, $values['title']);
+      }
+    }
+  }
+  $form_state['redirect'] = 'wiki-upload';
+}
+
+/**
+ * Creates a document from a file.
+ *
+ * @param $file
+ *   A file object.
+ * @param $title
+ *   The title of document.
+ */
+function oa_wiki_create_document($file, $title) {
+  global $user;
+  // Set the Space (og_group_ref) to the current Space Context. 
+  // Set the Section (oa_section_ref) to the current Section Context.
+  $node = (object) array(
+    // Create oa_wiki.
+    'type' => 'oa_wiki_page',
+    'uid' => $user->uid,
+    'name' => $user->name,
+    // Add the file to the oa_media attachment field.
+    'field_oa_media' => array(
+      LANGUAGE_NONE => array(
+        0 => array(
+          'fid' => $file->fid,
+          'display' => 1,
+          'description' => $title,
+        ),
+      ),
+    ),
+    'language' => LANGUAGE_NONE,
+    // Set the Title of the Document node to the same title.
+    'title' => $title,
+  );
+  node_save($node);
+  drupal_set_message(t('Document @title created.', array('@title' => $node->title)));
+}
+
+/**
+ * Update a document to a new file.
+ *
+ * @param $mode
+ *   The node to update
+ * @param $row
+ *   The row in the database to update (with delta and language).
+ * @param $file
+ *   The file object
+ */
+function oa_wiki_update_document($node, $row, $file) {
+  $node->field_oa_media[$row->language][$row->delta]['fid'] = $file->fid;
+  // @todo this is getting saved as a draft :(.
+  $node->revision = 1;
+  $node->log = 'Update file via upload.';
+  node_save($node);
+  drupal_set_message(t('Document @title updated.', array('@title' => $node->title)));
+}
+
+/**
+ * Find the document that may correspond to a given file.
+ *
+ * @param $file
+ *   The file object to find.
+ */
+function oa_wiki_find_document($file) {
+  $uri_ext = substr($file->uri, strrpos($file->uri, '.'));
+  $uri_sans_ext = substr($file->uri, 0, strrpos($file->uri, '.'));
+  $uri_after_underscore = substr($uri_sans_ext, strrpos($uri_sans_ext, '_') + 1);
+  $uri_before_underscore = substr($uri_sans_ext, 0, strrpos($uri_sans_ext, '_'));
+  $test_alt = $uri_before_underscore && strlen($uri_after_underscore) && is_numeric($uri_after_underscore);
+  // This is not a renamed file, no existing document matches.
+  if (!$test_alt) {
+    return FALSE;
+  }
+
+  // We want to find all files on document with the same uri or prefix.
+  $query = db_select('file_managed', 'f');
+  $query->innerJoin('field_data_field_oa_media', 'm', 'm.field_oa_media_fid = f.fid ANd entity_type = :type', array(':type' => 'node'));
+  $query->fields('m', array('delta', 'language'));
+  $query->addField('f','uri');
+  $query->addField('m', 'entity_id', 'nid');
+  $query->condition(db_or()->condition('f.uri', $file->uri)->condition('f.uri', db_like($uri_before_underscore) . '%', 'LIKE'));
+
+  if ($rows = $query->execute()->fetchAll()) {
+    foreach ($rows as $row) {
+      // Test if the db one is [uri].[ext] or [uri]_[numeric].[ext].
+      $db_uri_ext = substr($row->uri, strrpos($row->uri, '.'));
+      $db_uri_sans_ext = substr($row->uri, 0, strrpos($row->uri, '.'));
+      if ($pos = strrpos($db_uri_sans_ext, '_')) {
+        $db_uri_before_underscore = substr($db_uri_sans_ext, 0, $pos);
+        $db_uri_after_underscore = substr($db_uri_sans_ext, strrpos($db_uri_sans_ext, '_') + 1);
+      }
+      else {
+        $db_uri_before_underscore = $db_uri_sans_ext;
+        $db_uri_after_underscore = FALSE;
+      }
+      if ($db_uri_before_underscore == $uri_before_underscore && $db_uri_ext == $uri_ext
+        && (!$db_uri_after_underscore || is_numeric($db_uri_after_underscore))) {
+        if (($node = node_load($row->nid)) && $node->type == 'oa_wiki_page' && node_access('update', $node)) {
+          $node->oa_wiki_row = $row;
+          return $node;
+        }
+      }
+    }
+  }
+  return FALSE;
 }
