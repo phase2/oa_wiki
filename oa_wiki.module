@@ -317,7 +317,7 @@ function oa_wiki_create_document($file, $title) {
     // Set the Title of the Document node to the same title.
     'title' => $title,
   );
-  if ($context = og_context()) {
+  if (($context = og_context()) && og_user_access($context['group_type'], $context['gid'], "create oa_wiki_page content")) {
     // @todo check access, e.g. can add to group/section.
     $node->og_group_ref = array(
       LANGUAGE_NONE => array(
@@ -326,7 +326,7 @@ function oa_wiki_create_document($file, $title) {
         ),
       ),
     );
-    if ($section_id = oa_section_get_section_context()) {
+    if (($section_id = oa_section_get_section_context()) && node_access('view', node_load($section_id))) {
       $node->oa_section_ref = array(
         LANGUAGE_NONE => array(
           0 => array(
@@ -352,11 +352,15 @@ function oa_wiki_create_document($file, $title) {
  */
 function oa_wiki_update_document($node, $row, $file) {
   $node->field_oa_media[$row->language][$row->delta]['fid'] = $file->fid;
-  // @todo this is getting saved as a draft :(.
   $node->revision = 1;
   $node->log = 'Update file via upload.';
   node_save($node);
-  drupal_set_message(t('Document @title updated.', array('@title' => $node->title)));
+  if (module_exists('oa_workbench')) {
+    drupal_set_message(t('New draft of @title created.', array('@title' => $node->title)));
+  }
+  else {
+    drupal_set_message(t('Document @title updated.', array('@title' => $node->title)));
+  }
 }
 
 /**
