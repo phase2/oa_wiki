@@ -56,7 +56,7 @@ function oa_wiki_module_implements_alter(&$implementations, $hook) {
     unset($implementations['oa_wiki']);
     $implementations = array_merge(array('oa_wiki' => $group), $implementations);
   }
-  elseif ($hook == 'form_alter') {
+  elseif (($hook == 'form_alter') && (isset($implementations['oa_wiki']))) {
     $group = $implementations['oa_wiki'];
     unset($implementations['oa_wiki']);
     $implementations['oa_wiki'] = $group;
