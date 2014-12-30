@@ -170,7 +170,7 @@ function oa_wiki_field_default_field_instances() {
     ),
     'entity_type' => 'node',
     'field_name' => 'field_oa_wiki_page_no_redirect',
-    'label' => 'Show node instead of file?',
+    'label' => 'Show page instead of file?',
     'required' => 0,
     'settings' => array(
       'user_register_form' => FALSE,
@@ -435,7 +435,7 @@ function oa_wiki_field_default_field_instances() {
   t('OG vocabulary');
   t('OpenAtrium Section');
   t('Select a list of additional Spaces that this piece of content should be visible in. This <em>doesn\'t</em> affect access control - users in the other Spaces must have access to see this content in it\'s main Space for it to be visible to them at all.');
-  t('Show node instead of file?');
+  t('Show page instead of file?');
   t('Visible in other Spaces');
 
   return $field_instances;
