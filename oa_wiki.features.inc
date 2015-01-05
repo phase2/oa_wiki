@@ -46,3 +46,17 @@ function oa_wiki_node_info() {
   drupal_alter('node_info', $items);
   return $items;
 }
+
+/**
+ * Implements hook_paragraphs_info().
+ */
+function oa_wiki_paragraphs_info() {
+  $items = array(
+    'oa_related_document' => array(
+      'name' => 'Related Document',
+      'bundle' => 'oa_related_document',
+      'locked' => '1',
+    ),
+  );
+  return $items;
+}
