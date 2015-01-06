@@ -49,7 +49,6 @@ function oa_wiki_field_default_field_bases() {
           'oa_wiki_page' => 'oa_wiki_page',
         ),
       ),
-      'profile2_private' => FALSE,
       'target_type' => 'node',
     ),
     'translatable' => 0,
