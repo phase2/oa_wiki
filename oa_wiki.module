@@ -51,7 +51,7 @@ function oa_wiki_strongarm_alter(&$items) {
 function oa_wiki_module_implements_alter(&$implementations, $hook) {
   if ($hook == 'strongarm_alter') {
     // Move oa_wiki's implementation to the first one any other modules can
-    // override our default easily if they don't want workbenech enabled.
+    // override our default easily if they don't want workbench enabled.
     $group = $implementations['oa_wiki'];
     unset($implementations['oa_wiki']);
     $implementations = array_merge(array('oa_wiki' => $group), $implementations);
@@ -138,8 +138,8 @@ function oa_wiki_entity_info_alter(&$info) {
 /**
  * Change the URI to the file path for wikis.
  *
- * This only effects places that actually use entity_uri, whic is few but will
- * save a boostrap (no redirect needed) for those places that do.
+ * This only effects places that actually use entity_uri, which is few but will
+ * save a bootstrap (no redirect needed) for those places that do.
  */
 function oa_wiki_node_uri($node) {
   if (!($items = field_get_items('node', $node, 'field_oa_wiki_page_no_redirect')) || empty($items[0]['value'])) {
